@@ -1,6 +1,6 @@
 FROM nfcore/base:1.9
 LABEL authors="Daniel Rhodes, Christina Chatzipantsiou" \
-      description="Docker image containing all software requirements for the nf-core/annotate pipeline"
+      description="Docker image containing all software requirements for the lifebit-ai/annotate pipeline"
 
 # Install the conda environment
 COPY environment.yml /

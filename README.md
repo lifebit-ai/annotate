@@ -1,9 +1,9 @@
-# ![nf-core/annotate](docs/images/nf-core-annotate_logo.png)
+# ![lifebit-ai/annotate](docs/images/nf-core-annotate_logo.png)
 
 **Genomics England snp quality annotation pipeline**.
 
-[![GitHub Actions CI Status](https://github.com/nf-core/annotate/workflows/nf-core%20CI/badge.svg)](https://github.com/nf-core/annotate/actions)
-[![GitHub Actions Linting Status](https://github.com/nf-core/annotate/workflows/nf-core%20linting/badge.svg)](https://github.com/nf-core/annotate/actions)
+[![GitHub Actions CI Status](https://github.com/lifebit-ai/annotate/workflows/nf-core%20CI/badge.svg)](https://github.com/lifebit-ai/annotate/actions)
+[![GitHub Actions Linting Status](https://github.com/lifebit-ai/annotate/workflows/nf-core%20linting/badge.svg)](https://github.com/lifebit-ai/annotate/actions)
 [![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A519.10.0-brightgreen.svg)](https://www.nextflow.io/)
 
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg)](http://bioconda.github.io/)
@@ -22,7 +22,7 @@ ii. Install either [`Docker`](https://docs.docker.com/engine/installation/) or [
 iii. Download the pipeline and test it on a minimal dataset with a single command
 
 ```bash
-nextflow run nf-core/annotate -profile test,<docker/singularity/conda/institute>
+nextflow run lifebit-ai/annotate -profile test,<docker/singularity/conda/institute>
 ```
 
 > Please check [nf-core/configs](https://github.com/nf-core/configs#documentation) to see if a custom config file to run nf-core pipelines already exists for your Institute. If so, you can simply use `-profile <institute>` in your command. This will enable either `docker` or `singularity` and set the appropriate execution settings for your local compute environment.
@@ -32,14 +32,14 @@ iv. Start running your own analysis!
 <!-- TODO nf-core: Update the default command above used to run the pipeline -->
 
 ```bash
-nextflow run nf-core/annotate -profile <docker/singularity/conda/institute> --reads '*_R{1,2}.fastq.gz' --genome GRCh37
+nextflow run lifebit-ai/annotate -profile <docker/singularity/conda/institute> --reads '*_R{1,2}.fastq.gz' --genome GRCh37
 ```
 
 See [usage docs](docs/usage.md) for all of the available options when running the pipeline.
 
 ## Documentation
 
-The nf-core/annotate pipeline comes with documentation about the pipeline, found in the `docs/` directory:
+The lifebit-ai/annotate pipeline comes with documentation about the pipeline, found in the `docs/` directory:
 
 1. [Installation](https://nf-co.re/usage/installation)
 2. Pipeline configuration
@@ -54,7 +54,7 @@ The nf-core/annotate pipeline comes with documentation about the pipeline, found
 
 ## Credits
 
-nf-core/annotate was originally written by Daniel Rhodes, Christina Chatzipantsiou.
+lifebit-ai/annotate was originally written by Daniel Rhodes, Christina Chatzipantsiou.
 
 ## Contributions and Support
 
@@ -65,7 +65,7 @@ For further information or help, don't hesitate to get in touch on [Slack](https
 ## Citation
 
 <!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi. -->
-<!-- If you use  nf-core/annotate for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
+<!-- If you use  lifebit-ai/annotate for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
 
 You can cite the `nf-core` publication as follows:
 

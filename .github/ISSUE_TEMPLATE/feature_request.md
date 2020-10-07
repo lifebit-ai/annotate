@@ -1,4 +1,4 @@
-# nf-core/annotate feature request
+# lifebit-ai/annotate feature request
 
 Hi there!
 
