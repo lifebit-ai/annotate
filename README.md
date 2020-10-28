@@ -7,7 +7,7 @@
 [![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A519.10.0-brightgreen.svg)](https://www.nextflow.io/)
 
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg)](http://bioconda.github.io/)
-[![Docker](https://img.shields.io/docker/automated/nfcore/annotate.svg)](https://hub.docker.com/r/nfcore/annotate)
+[![Docker](https://img.shields.io/docker/automated/lifebitai/annotate.svg)](https://hub.docker.com/r/lifebitai/annotate)
 
 ## Introduction
 
@@ -60,7 +60,7 @@ lifebit-ai/annotate was originally written by Daniel Rhodes, Christina Chatzipan
 
 If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
 
-For further information or help, don't hesitate to get in touch on [Slack](https://nfcore.slack.com/channels/annotate) (you can join with [this invite](https://nf-co.re/join/slack)).
+For further information or help, don't hesitate to get in touch on [Slack](https://lifebitai.slack.com/channels/annotate) (you can join with [this invite](https://nf-co.re/join/slack)).
 
 ## Citation
 

@@ -105,10 +105,10 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
 
 * `docker`
   * A generic configuration profile to be used with [Docker](http://docker.com/)
-  * Pulls software from dockerhub: [`nfcore/annotate`](http://hub.docker.com/r/nfcore/annotate/)
+  * Pulls software from dockerhub: [`lifebitai/annotate`](http://hub.docker.com/r/lifebitai/annotate/)
 * `singularity`
   * A generic configuration profile to be used with [Singularity](http://singularity.lbl.gov/)
-  * Pulls software from DockerHub: [`nfcore/annotate`](http://hub.docker.com/r/nfcore/annotate/)
+  * Pulls software from DockerHub: [`lifebitai/annotate`](http://hub.docker.com/r/lifebitai/annotate/)
 * `conda`
   * Please only use Conda as a last resort i.e. when it's not possible to run the pipeline with Docker or Singularity.
   * A generic configuration profile to be used with [Conda](https://conda.io/docs/)
