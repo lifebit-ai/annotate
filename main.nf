@@ -89,10 +89,9 @@ Channel.from(summary.collect{ [it.key, it.value] })
 
 
 /*
- * STEP 1 - FastQC
+ * STEP 1 - validate template
  */
-process fastqc {
-    publishDir "${params.outdir}/fastqc", mode: 'copy'
+process validate_template {
     echo true
 
     input:
