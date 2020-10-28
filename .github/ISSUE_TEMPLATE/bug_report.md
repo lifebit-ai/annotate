@@ -1,4 +1,4 @@
-# nf-core/annotate bug report
+# lifebit-ai/annotate bug report
 
 Hi there!
 
@@ -20,23 +20,6 @@ Steps to reproduce the behaviour:
 
 A clear and concise description of what you expected to happen.
 
-## System
+## Failed job link if applicable
 
-- Hardware: <!-- [e.g. HPC, Desktop, Cloud...] -->
-- Executor: <!-- [e.g. slurm, local, awsbatch...] -->
-- OS: <!-- [e.g. CentOS Linux, macOS, Linux Mint...] -->
-- Version <!-- [e.g. 7, 10.13.6, 18.3...] -->
-
-## Nextflow Installation
-
-- Version: <!-- [e.g. 19.10.0] -->
-
-## Container engine
-
-- Engine: <!-- [e.g. Conda, Docker or Singularity] -->
-- version: <!-- [e.g. 1.0.0] -->
-- Image tag: <!-- [e.g. nfcore/annotate:1.0.0] -->
-
-## Additional context
-
-Add any other context about the problem here.
+Please add the job id and workspace name for the failed job.

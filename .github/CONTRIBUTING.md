@@ -1,23 +1,21 @@
-# nf-core/annotate: Contributing Guidelines
+# lifebit-ai/annotate: Contributing Guidelines
 
 Hi there!
-Many thanks for taking an interest in improving nf-core/annotate.
+Many thanks for taking an interest in improving lifebit-ai/annotate.
 
-We try to manage the required tasks for nf-core/annotate using GitHub issues, you probably came to this page when creating one.
+We try to manage the required tasks for lifebit-ai/annotate using GitHub issues, you probably came to this page when creating one.
 Please use the pre-filled template to save time.
 
 However, don't be put off by this template - other more general issues and suggestions are welcome!
 Contributions to the code are even more welcome ;)
 
-> If you need help using or modifying nf-core/annotate then the best place to ask is on the nf-core Slack [#annotate](https://nfcore.slack.com/channels/annotate) channel ([join our Slack here](https://nf-co.re/join/slack)).
-
 ## Contribution workflow
 
-If you'd like to write some code for nf-core/annotate, the standard workflow is as follows:
+If you'd like to write some code for lifebit-ai/annotate, the standard workflow is as follows:
 
-1. Check that there isn't already an issue about your idea in the [nf-core/annotate issues](https://github.com/nf-core/annotate/issues) to avoid duplicating work
+1. Check that there isn't already an issue about your idea in the [lifebit-ai/annotate issues](https://github.com/lifebit-ai/annotate/issues) to avoid duplicating work
     * If there isn't one already, please create one so that others know you're working on this
-2. [Fork](https://help.github.com/en/github/getting-started-with-github/fork-a-repo) the [nf-core/annotate repository](https://github.com/nf-core/annotate) to your GitHub account
+2. [Fork](https://help.github.com/en/github/getting-started-with-github/fork-a-repo) the [lifebit-ai/annotate repository](https://github.com/lifebit-ai/annotate) to your GitHub account
 3. Make the necessary changes / additions within your forked repository
 4. Submit a Pull Request against the `dev` branch and wait for the code to be reviewed and merged
 
@@ -46,7 +44,7 @@ These tests are run both with the latest available version of `Nextflow` and als
 
 ## Patch
 
-: warning: Only in the unlikely and regretful event of a release happening with a bug.
+:warning: Only in the unlikely and regretful event of a release happening with a bug.
 
 * On your own fork, make a new branch `patch` based on `upstream/master`.
 * Fix the bug, and bump version (X.Y.Z+1).
@@ -54,4 +52,4 @@ These tests are run both with the latest available version of `Nextflow` and als
 
 ## Getting help
 
-For further information/help, please consult the [nf-core/annotate documentation](https://nf-co.re/nf-core/annotate/docs) and don't hesitate to get in touch on the nf-core Slack [#annotate](https://nfcore.slack.com/channels/annotate) channel ([join our Slack here](https://nf-co.re/join/slack)).
+For further information/help, please consult the [lifebit-ai/annotate documentation](https://nf-co.re/lifebit-ai/annotate/docs).

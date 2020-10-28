@@ -1,6 +1,6 @@
-# nf-core/annotate: Documentation
+# lifebit-ai/annotate: Documentation
 
-The nf-core/annotate documentation is split into the following files:
+The lifebit-ai/annotate documentation is split into the following files:
 
 1. [Installation](https://nf-co.re/usage/installation)
 2. Pipeline configuration
