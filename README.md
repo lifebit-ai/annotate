@@ -1,4 +1,4 @@
-# ![lifebit-ai/annotate](docs/images/nf-core-annotate_logo.png)
+# lifebit-ai/annotate
 
 **Genomics England snp quality annotation pipeline**.
 
