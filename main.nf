@@ -88,21 +88,39 @@ Channel.from(summary.collect{ [it.key, it.value] })
     .set { ch_workflow_summary }
 
 
+
+// Defining input channels
+
+Channel.fromPath(params.predicted_ancestries)
+    .set { ch_infer_ancestry }
+
+Channel.fromPath(params.unrelated_list)
+    .set { ch_unrelated_list }
+
+
+
 /*
- * STEP 1 - validate template
+ * STEP 1 - prep_hwe
  */
-process validate_template {
-    echo true
+
+process prep_hwe {
+    publishDir "${params.outdir}/prep_hwe_pop_files", mode: params.publish_dir_mode
 
     input:
+    file(predicted_ancestries) from ch_infer_ancestry
+    file(unrelated_list) from ch_unrelated_list
 
     output:
+    file("*_unrelated_pop.keep") into ch_unrelated_by_pop_keep_files
 
     script:
     """
-    echo "template process has run"
+    prep_hwe.R --predicted_ancestries='${predicted_ancestries}' \
+               --unrelated_list='${unrelated_list}'
     """
 }
+
+ch_unrelated_by_pop_keep_files.flatten().view()
 
 /*
  * Completion notification
