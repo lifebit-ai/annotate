@@ -25,7 +25,8 @@ argList <- c('pos',
              'nsamp',
              'acCount',
              'kgp3txt',
-             'king')
+             'king',
+	     'final')
 
 
 allArgs <- list()
@@ -35,7 +36,7 @@ allArgs <- lapply(1:length(argList),
                   })
 names(allArgs) <- argList
 #Also adding the hardy location here
-allArgs$hardy <- '/re_gecip/shared_allGeCIPs/drhodes/Aggregation_79k/out_actual/HWE/'
+allArgs$hardy <- '.'
 # If king is defined as T in bash env only output pass col
 env <- Sys.getenv()
 if(any(grepl('^king$', names(env), ignore.case = F))){
@@ -50,7 +51,7 @@ if(any(grepl('^final$', names(env), ignore.case = F))){
 } else {
   final <- F
 }
-
+final = allArgs$final
 # I've kept these two separate to just make it more explicit for the user
 cat(paste0('KING: ', king,'\n'))
 cat(paste0('FINAL: ', final,'\n'))
@@ -284,6 +285,22 @@ standard_filter <- function(dat){
 
 data_clean <- function(dat){
   cat('Cleaning data...\n')
+
+  if(final){
+  dat %<>%
+    mutate_at(.vars = vars(-ID,
+                           -`#CHROM`,
+                           -POS,
+                           -REF,
+                           -ALT,
+                           -FILTER,
+                           -starts_with("phwe")),
+              .funs = list( ~ gsub("(\\.?<![0-9])0+", "",
+                                   round(x = ., digits = 3),
+                                   perl = TRUE)))
+    dat %<>%  mutate_at(.vars = vars(starts_with("phwe")),
+              .funs = list(~formatC(., format = "e", digits = 2)))
+  } else {
   dat %<>% 
     mutate_at(.vars = vars(-ID,
                            -`#CHROM`,
@@ -296,7 +313,8 @@ data_clean <- function(dat){
                                    perl = TRUE)))  %>% 
     mutate_at(.vars = vars(),
               .funs = list(~ replace_na(., '.')))
-  
+  }
+
   dat %<>% select(-ID, everything())
   #Scrub the 99 AB_ratio scores, revert to '.'
   dat %<>% mutate(AB_Ratio = ifelse(AB_Ratio == 99, '.', AB_Ratio))
