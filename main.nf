@@ -182,7 +182,7 @@ Channel.fromPath(params.input)
     .ifEmpty { exit 1, "Input .csv list of input tissues not found at ${params.input}. Is the file path correct?" }
     .splitCsv(sep: ',',  skip: 1)
     .map { bcf, index -> ['chr'+file(bcf).simpleName.split('_chr').last() , file(bcf), file(index)] }
-    .into { ch_bcfs_p_hwe; ch_bcfs_make_header }
+    .into { ch_bcfs_p_hwe; ch_bcfs_make_header; ch_bcfs_final_annotation }
 
 
 Channel.fromPath(params.predicted_ancestries)
@@ -327,7 +327,7 @@ process end_aggregate_annotation {
           file(AC_counts) from ch_joined_files_to_aggregate
 
     output:
-    tuple file("BCFtools_site_metrics_*.txt.gz"), file("BCFtools_site_metrics_*.txt.gz.tbi") into ch_end_aggr_annotation
+    tuple val(region), file("BCFtools_site_metrics_*.txt.gz"), file("BCFtools_site_metrics_*.txt.gz.tbi") into ch_end_aggr_annotation
     file "Summary_stats/*_all_flags.txt" into ch_summary_stats
 
     script:
@@ -366,7 +366,7 @@ process end_aggregate_annotation {
 
 
 process make_header {
-    publishDir "${params.outdir}/Annotation_final/", mode: params.publish_dir_mode
+    publishDir "${params.outdir}/Additional_header/", mode: params.publish_dir_mode
 
     input:
     file(all_flags) from ch_all_flags.collect()
@@ -395,7 +395,38 @@ process make_header {
 }
 
 
+/*
+ * Step 5 - final annotation step
+ */
 
+process annotate_bcfs {
+    publishDir "${params.outdir}/Final_annotated_BCFs/", mode: params.publish_dir_mode
+
+    input:
+    tuple val(region), file(bcf), file(index), file(bcf_site_metrics), file(index2) from ch_bcfs_final_annotation.join(ch_end_aggr_annotation)
+    file(additional_header) from ch_additional_header
+
+    output:
+    tuple file('*.vcf.gz'), file('*.vcf.gz.tbi') into ch_final_annotated_vcfs
+    script:
+    outfile=file(bcf).getSimpleName()+'.vcf.gz'
+    """
+    bcftools annotate ${bcf} \
+    -x FILTER,^INFO/OLD_MULTIALLELIC,^INFO/OLD_CLUMPED \
+    -a ${bcf_site_metrics} \
+    -h ${additional_header} \
+    --threads 16 \
+    -c CHROM,POS,REF,ALT,missingness,medianDepthAll,medianDepthNonMiss,medianGQ,completeGTRatio,MendelSite,ABratio,phwe_afr,phwe_eur,phwe_eas,phwe_sas,FILTER,- | \
+    bcftools +fill-tags \
+    -o ${outfile} \
+    -Oz \
+    --threads 16 \
+    -- -d -t AC,AC_Hom,AC_Het,AC_Hemi,AN
+
+    bcftools index ${outfile}
+
+    """
+}
 
 
 
