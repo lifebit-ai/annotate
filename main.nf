@@ -170,6 +170,9 @@ MendErr_prefix             = params.MendErr_prefix
 N_samples_suffix           = params.N_samples_suffix
 AC_counts_dir              = params.AC_counts_dir
 AC_counts_suffix           = params.AC_counts_suffix
+annotate_dir               = params.annotate_dir
+stats_dir                  = params.stats_dir
+all_flags_suffix           = params.all_flags_suffix
 
 
 // Defining input channels
@@ -179,7 +182,7 @@ Channel.fromPath(params.input)
     .ifEmpty { exit 1, "Input .csv list of input tissues not found at ${params.input}. Is the file path correct?" }
     .splitCsv(sep: ',',  skip: 1)
     .map { bcf, index -> ['chr'+file(bcf).simpleName.split('_chr').last() , file(bcf), file(index)] }
-    .set { ch_bcfs }
+    .into { ch_bcfs_p_hwe; ch_bcfs_make_header }
 
 
 Channel.fromPath(params.predicted_ancestries)
@@ -224,6 +227,10 @@ ch_N_samples = Channel.fromPath("${siteqc_results_dir}/*${N_samples_suffix}")
 ch_AC_counts = Channel.fromPath("${siteqc_results_dir}/${AC_counts_dir}/*${AC_counts_suffix}")
     .map { path -> [file(path).simpleName.split('_AC').first(), file(path)] }
 
+ch_all_flags = Channel.fromPath("${siteqc_results_dir}/${annotate_dir}/${stats_dir}/*${all_flags_suffix}")
+// *_all_flags.txt files don't have to be mapped by bcf region, so here it is skipped.
+
+
 
 
 /*
@@ -257,7 +264,7 @@ process p_hwe {
     publishDir "${params.outdir}/p_hwe_plink_files", mode: params.publish_dir_mode
 
     input:
-    tuple val(region), file(bcf), file(index) from ch_bcfs
+    tuple val(region), file(bcf), file(index) from ch_bcfs_p_hwe
     each file(unrealted_pop_keep_file) from ch_unrelated_by_pop_keep_files.flatten()
 
     output:
@@ -350,6 +357,48 @@ process end_aggregate_annotation {
     tabix -f -s1 -b2 -e2 BCFtools_site_metrics_${region}.txt.gz
     """
 }
+
+
+
+/*
+ * Step 4 - Create new bcf header
+ */
+
+
+process make_header {
+    publishDir "${params.outdir}/Annotation_final/", mode: params.publish_dir_mode
+
+    input:
+    file(all_flags) from ch_all_flags.collect()
+    // From main bcf input cahnnel we need only 1 bcf file to get the example header
+    file(bcf) from ch_bcfs_make_header.randomSample(1).map{region, bcf, index -> [bcf]}
+
+    output:
+    file("additional_header.txt") into ch_additional_header
+
+    script:
+    """
+    # Construct a file with unique set of all stats ever seen in all bcf stats files.
+    tail -n +2 -q ${all_flags} | cut -f1 | sort | uniq  > "all_seen_flags.txt"
+
+    # Get the original header from example bcf file
+    bcftools view -h ${bcf} > "orig.hdr"
+
+    # Clean out INFO lines, these wil be repopulated
+    grep -v \\#\\#INFO "orig.hdr" > "orig.hdr2" && \
+    mv "orig.hdr2" "orig.hdr"
+
+    # Run the R script to construct the header
+    headerbuild.R
+
+    """
+}
+
+
+
+
+
+
 
 
 /*
