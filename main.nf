@@ -320,7 +320,7 @@ process end_aggregate_annotation {
           file(AC_counts) from ch_joined_files_to_aggregate
 
     output:
-    file "BCFtools_site_metrics_*.txt" into ch_end_aggr_annotation
+    tuple file("BCFtools_site_metrics_*.txt.gz"), file("BCFtools_site_metrics_*.txt.gz.tbi") into ch_end_aggr_annotation
     file "Summary_stats/*_all_flags.txt" into ch_summary_stats
 
     script:
@@ -345,6 +345,9 @@ process end_aggregate_annotation {
     '.' \
     ${params.king} \
     ${params.aggregate_final}
+
+    bgzip -f BCFtools_site_metrics_${region}.txt
+    tabix -f -s1 -b2 -e2 BCFtools_site_metrics_${region}.txt.gz
     """
 }
 
