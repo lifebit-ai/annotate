@@ -170,9 +170,6 @@ MendErr_prefix             = params.MendErr_prefix
 N_samples_suffix           = params.N_samples_suffix
 AC_counts_dir              = params.AC_counts_dir
 AC_counts_suffix           = params.AC_counts_suffix
-annotate_dir               = params.annotate_dir
-stats_dir                  = params.stats_dir
-all_flags_suffix           = params.all_flags_suffix
 
 
 // Defining input channels
@@ -226,9 +223,6 @@ ch_N_samples = Channel.fromPath("${siteqc_results_dir}/*${N_samples_suffix}")
 
 ch_AC_counts = Channel.fromPath("${siteqc_results_dir}/${AC_counts_dir}/*${AC_counts_suffix}")
     .map { path -> [file(path).simpleName.split('_AC').first(), file(path)] }
-
-ch_all_flags = Channel.fromPath("${siteqc_results_dir}/${annotate_dir}/${stats_dir}/*${all_flags_suffix}")
-// *_all_flags.txt files don't have to be mapped by bcf region, so here it is skipped.
 
 
 
@@ -369,7 +363,7 @@ process make_header {
     publishDir "${params.outdir}/Additional_header/", mode: params.publish_dir_mode
 
     input:
-    file(all_flags) from ch_all_flags.collect()
+    file(all_flags) from ch_summary_stats.collect()
     // From main bcf input cahnnel we need only 1 bcf file to get the example header
     file(bcf) from ch_bcfs_make_header.randomSample(1).map{region, bcf, index -> [bcf]}
 
@@ -407,7 +401,7 @@ process annotate_bcfs {
     file(additional_header) from ch_additional_header
 
     output:
-    tuple file('*.vcf.gz'), file('*.vcf.gz.tbi') into ch_final_annotated_vcfs
+    tuple file('*.vcf.gz'), file('*.vcf.gz.csi') into ch_final_annotated_vcfs
     script:
     outfile=file(bcf).getSimpleName()+'.vcf.gz'
     """
@@ -415,7 +409,6 @@ process annotate_bcfs {
     -x FILTER,^INFO/OLD_MULTIALLELIC,^INFO/OLD_CLUMPED \
     -a ${bcf_site_metrics} \
     -h ${additional_header} \
-    --threads 16 \
     -c CHROM,POS,REF,ALT,missingness,medianDepthAll,medianDepthNonMiss,medianGQ,completeGTRatio,MendelSite,ABratio,phwe_afr,phwe_eur,phwe_eas,phwe_sas,FILTER,- | \
     bcftools +fill-tags \
     -o ${outfile} \
