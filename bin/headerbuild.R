@@ -1,8 +1,8 @@
 #!/usr/bin/env Rscript
 
 ### Description
-# This script is used in make_header process to generate new headers forannotated bcf files.
-# Current version is makeing aheader used for autosomes only.
+# This script is used in make_header process to generate new headers for annotated bcf files.
+# Current version is making a header used for autosomes only.
 
 
 library(data.table)

@@ -139,7 +139,7 @@ if (!params.input) exit 1, "The list of input bcf/vcf files was not provided. \n
 if (!params.predicted_ancestries) exit 1, "The participants' predicted ancestry file was not specified. \nPlease provide it with --predicted_ancestries [file] option. \nUse --help option for more information."
 
 // Check if user provided input csv file containing paths to bcf files and their indexes
-if (!params.unrelated_list) exit 1, "The list of unrelated participants was not specified. \nPlease provide it with --predicted_ancestries [file] option. \nUse --help option for more information."
+if (!params.unrelated_list) exit 1, "The list of unrelated participants was not specified. \nPlease provide it with --unrelated_list [file] option. \nUse --help option for more information."
 
 // Check if user provided SiteQC results directory
 if (!params.siteqc_results_dir) exit 1, "The SiteQC results folder was not specified. \nPlease provide it with --siteqc_results_dir [dir] option. \nUse --help option for more information."
