@@ -139,7 +139,7 @@ if (!params.input) exit 1, "The list of input bcf/vcf files was not provided. \n
 if (!params.predicted_ancestries) exit 1, "The participants' predicted ancestry file was not specified. \nPlease provide it with --predicted_ancestries [file] option. \nUse --help option for more information."
 
 // Check if user provided input csv file containing paths to bcf files and their indexes
-if (!params.unrelated_list) exit 1, "The list of unrelated participants was not specified. \nPlease provide it with --predicted_ancestries [file] option. \nUse --help option for more information."
+if (!params.unrelated_list) exit 1, "The list of unrelated participants was not specified. \nPlease provide it with --unrelated_list [file] option. \nUse --help option for more information."
 
 // Check if user provided SiteQC results directory
 if (!params.siteqc_results_dir) exit 1, "The SiteQC results folder was not specified. \nPlease provide it with --siteqc_results_dir [dir] option. \nUse --help option for more information."
@@ -179,7 +179,7 @@ Channel.fromPath(params.input)
     .ifEmpty { exit 1, "Input .csv list of input tissues not found at ${params.input}. Is the file path correct?" }
     .splitCsv(sep: ',',  skip: 1)
     .map { bcf, index -> ['chr'+file(bcf).simpleName.split('_chr').last() , file(bcf), file(index)] }
-    .set { ch_bcfs }
+    .into { ch_bcfs_p_hwe; ch_bcfs_make_header; ch_bcfs_final_annotation }
 
 
 Channel.fromPath(params.predicted_ancestries)
@@ -226,6 +226,7 @@ ch_AC_counts = Channel.fromPath("${siteqc_results_dir}/${AC_counts_dir}/*${AC_co
 
 
 
+
 /*
  * STEP 1 - prep_hwe
  */
@@ -257,7 +258,7 @@ process p_hwe {
     publishDir "${params.outdir}/p_hwe_plink_files", mode: params.publish_dir_mode
 
     input:
-    tuple val(region), file(bcf), file(index) from ch_bcfs
+    tuple val(region), file(bcf), file(index) from ch_bcfs_p_hwe
     each file(unrealted_pop_keep_file) from ch_unrelated_by_pop_keep_files.flatten()
 
     output:
@@ -320,7 +321,7 @@ process end_aggregate_annotation {
           file(AC_counts) from ch_joined_files_to_aggregate
 
     output:
-    file "BCFtools_site_metrics_*.txt" into ch_end_aggr_annotation
+    tuple val(region), file("BCFtools_site_metrics_*.txt.gz"), file("BCFtools_site_metrics_*.txt.gz.tbi") into ch_end_aggr_annotation
     file "Summary_stats/*_all_flags.txt" into ch_summary_stats
 
     script:
@@ -345,8 +346,83 @@ process end_aggregate_annotation {
     '.' \
     ${params.king} \
     ${params.aggregate_final}
+
+    bgzip -f BCFtools_site_metrics_${region}.txt
+    tabix -f -s1 -b2 -e2 BCFtools_site_metrics_${region}.txt.gz
     """
 }
+
+
+
+/*
+ * Step 4 - Create new bcf header
+ */
+
+
+process make_header {
+    publishDir "${params.outdir}/Additional_header/", mode: params.publish_dir_mode
+
+    input:
+    file(all_flags) from ch_summary_stats.collect()
+    // From main bcf input cahnnel we need only 1 bcf file to get the example header
+    file(bcf) from ch_bcfs_make_header.randomSample(1).map{region, bcf, index -> [bcf]}
+
+    output:
+    file("additional_header.txt") into ch_additional_header
+
+    script:
+    """
+    # Construct a file with unique set of all stats ever seen in all bcf stats files.
+    tail -n +2 -q ${all_flags} | cut -f1 | sort | uniq  > "all_seen_flags.txt"
+
+    # Get the original header from example bcf file
+    bcftools view -h ${bcf} > "orig.hdr"
+
+    # Clean out INFO lines, these wil be repopulated
+    grep -v \\#\\#INFO "orig.hdr" > "orig.hdr2" && \
+    mv "orig.hdr2" "orig.hdr"
+
+    # Run the R script to construct the header
+    headerbuild.R
+
+    """
+}
+
+
+/*
+ * Step 5 - final annotation step
+ */
+
+process annotate_bcfs {
+    publishDir "${params.outdir}/Final_annotated_BCFs/", mode: params.publish_dir_mode
+
+    input:
+    tuple val(region), file(bcf), file(index), file(bcf_site_metrics), file(index2) from ch_bcfs_final_annotation.join(ch_end_aggr_annotation)
+    file(additional_header) from ch_additional_header
+
+    output:
+    tuple file('*.vcf.gz'), file('*.vcf.gz.csi') into ch_final_annotated_vcfs
+    script:
+    outfile=file(bcf).getSimpleName()+'.vcf.gz'
+    """
+    bcftools annotate ${bcf} \
+    -x FILTER,^INFO/OLD_MULTIALLELIC,^INFO/OLD_CLUMPED \
+    -a ${bcf_site_metrics} \
+    -h ${additional_header} \
+    -c CHROM,POS,REF,ALT,missingness,medianDepthAll,medianDepthNonMiss,medianGQ,completeGTRatio,MendelSite,ABratio,phwe_afr,phwe_eur,phwe_eas,phwe_sas,FILTER,- | \
+    bcftools +fill-tags \
+    -o ${outfile} \
+    -Oz \
+    --threads 16 \
+    -- -d -t AC,AC_Hom,AC_Het,AC_Hemi,AN
+
+    bcftools index ${outfile}
+
+    """
+}
+
+
+
 
 
 /*
