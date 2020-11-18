@@ -192,28 +192,40 @@ Channel.fromPath(params.unrelated_list)
 // SiteQC results channels:
 
 ch_startfiles = Channel.fromPath("${siteqc_results_dir}/${startfiles_dir}/${startfiles_prefix}*")
-    .map { path -> ['chr'+file(path).simpleName.split('chr').last(), file(path)] }
+    .map { path -> ['chr'+file(path).simpleName.split('chr').last().replaceAll("_X[XY]",""), file(path)] }
+    .groupTuple()
+    // First item in tuple carries region value - bcf file identity, and is deduced from the file name.
+    // For chrX there are special cases where males' and females' X chromosomes have to be treated differently.
+    // In such cases for chrX regions there are pairs of metrics files, which have additional _XX _XY suffixes.
+    // To deal with such cases, for region value we specifically remove the suffix, and pairs of such _XX and _XY
+    // files are grouped in one tuple with .groupTuple() operator by the region value that corresponds to the same bcf.
+    // Not all metrics files have such special handlingfor chrX.
 
 ch_miss1 = Channel.fromPath("${siteqc_results_dir}/${missing1_dir}/${missing1_prefix}*")
-    .map { path -> ['chr'+file(path).simpleName.split('chr').last(), file(path)] }
+    .map { path -> ['chr'+file(path).simpleName.split('chr').last().replaceAll("_X[XY]",""), file(path)] }
+    .groupTuple()
 
 ch_miss2 = Channel.fromPath("${siteqc_results_dir}/${missing2_dir}/${missing2_prefix}*")
-    .map { path -> ['chr'+file(path).simpleName.split('chr').last(), file(path)] }
+    .map { path -> ['chr'+file(path).simpleName.split('chr').last().replaceAll("_X[XY]",""), file(path)] }
+    .groupTuple()
 
 ch_medianCoverageAll = Channel.fromPath("${siteqc_results_dir}/${median_coverage_all_dir}/${median_coverage_all_prefix}*")
-    .map { path -> ['chr'+file(path).simpleName.split('chr').last(), file(path)] }
+    .map { path -> ['chr'+file(path).simpleName.split('chr').last().replaceAll("_X[XY]",""), file(path)] }
+    .groupTuple()
 
 ch_medianNonMiss = Channel.fromPath("${siteqc_results_dir}/${medianNonMiss_dir}/${medianNonMiss_prefix}*")
-    .map { path -> ['chr'+file(path).simpleName.split('chr').last(), file(path)] }
+    .map { path -> ['chr'+file(path).simpleName.split('chr').last().replaceAll("_X[XY]",""), file(path)] }
+    .groupTuple()
 
 ch_medianGQ = Channel.fromPath("${siteqc_results_dir}/${medianGQ_dir}/${medianGQ_prefix}*")
-    .map { path -> ['chr'+file(path).simpleName.split('chr').last(), file(path)] }
+    .map { path -> ['chr'+file(path).simpleName.split('chr').last().replaceAll("_X[XY]",""), file(path)] }
+    .groupTuple()
 
 ch_hetAll = Channel.fromPath("${siteqc_results_dir}/${hetAll_dir}/${hetAll_prefix}*")
-    .map { path -> ['chr'+file(path).simpleName.split('chr').last(), file(path)] }
+    .map { path -> ['chr'+file(path).simpleName.split('chr').last().replaceAll("_XX",""), file(path)] }
 
 ch_hetPass = Channel.fromPath("${siteqc_results_dir}/${hetPass_dir}/${hetPass_prefix}*")
-    .map { path -> ['chr'+file(path).simpleName.split('chr').last(), file(path)] }
+    .map { path -> ['chr'+file(path).simpleName.split('chr').last().replaceAll("_XX",""), file(path)] }
 
 ch_MendErr = Channel.fromPath("${siteqc_results_dir}/${MendErr_dir}/${MendErr_prefix}*")
     .map { path -> ['chr'+file(path).simpleName.split('chr').last(), file(path)] }
