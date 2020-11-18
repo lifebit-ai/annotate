@@ -380,30 +380,59 @@ process end_aggregate_annotation {
 
     output:
     tuple val(region), file("BCFtools_site_metrics_*.txt.gz"), file("BCFtools_site_metrics_*.txt.gz.tbi") into ch_end_aggr_annotation
-    file "Summary_stats/*_all_flags.txt" into ch_summary_stats
+    file "Summary_stats/*.txt" optional true into ch_summary_stats
 
     script:
-// The hwe files are not explicitly provided to R script as arguments.
-// Instead R script just expects four hwe files to be present in wordkir.
+    // The hwe files are not explicitly provided to R script as arguments.
+    // Instead R script just expects four hwe files to be present in wordkir.
+    // For the chrX case, we don't even provide the pairs of _XX and _XY files,
+    // but the basenames instead. Nextflow will stage the files to wdir, R script
+    // will handle the names and find the files.
+    startfile_basename = startfile[0].toString().replaceAll("_X[XY]","")
+    miss1_basename = miss1[0].toString().replaceAll("_X[XY]","")
+    miss2_basename = miss2[0].toString().replaceAll("_X[XY]","")
+    medianCoverageAll_basename = medianCoverageAll[0].toString().replaceAll("_X[XY]","")
+    medianNonMiss_basename = medianNonMiss[0].toString().replaceAll("_X[XY]","")
+    medianGQ_basename = medianGQ[0].toString().replaceAll("_X[XY]","")
+    hetAll_basenamne = hetAll[0].toString().replaceAll("_X[XY]","")
+    hetPass_basenamne = hetPass[0].toString().replaceAll("_X[XY]","")
+    MendErr_basename = MendErr[0].toString().replaceAll("_X[XY]","")
+    N_samples_basename = N_samples[0].toString().replaceAll("_X[XY]","")
     """
     mkdir -p "Summary_stats"
-    annotatePerChunk.R \
-    ${region} \
-    ${startfile} \
-    ${miss1} \
-    ${miss2} \
-    ${medianCoverageAll} \
-    ${medianNonMiss} \
-    ${medianGQ} \
-    ${hetAll} \
-    ${hetPass} \
-    ${MendErr} \
-    '.' \
-    ${N_samples} \
-    ${AC_counts} \
-    '.' \
-    ${params.king} \
-    ${params.aggregate_final}
+    if [[ $region == *"chrX"* ]]; then
+        sexChromAnnotation.R \
+        ${region} \
+        ${startfile_basename} \
+        ${miss1_basename} \
+        ${miss2_basename} \
+        ${medianCoverageAll_basename} \
+        ${medianNonMiss_basename} \
+        ${medianGQ_basename} \
+        ${hetAll_basenamne} \
+        ${hetPass_basenamne} \
+        ${MendErr_basename} \
+        '.' \
+        ${N_samples_basename}
+    else
+        annotatePerChunk.R \
+        ${region} \
+        ${startfile} \
+        ${miss1} \
+        ${miss2} \
+        ${medianCoverageAll} \
+        ${medianNonMiss} \
+        ${medianGQ} \
+        ${hetAll} \
+        ${hetPass} \
+        ${MendErr} \
+        '.' \
+        ${N_samples} \
+        ${AC_counts} \
+        '.' \
+        ${params.king} \
+        ${params.aggregate_final}
+    fi
 
     bgzip -f BCFtools_site_metrics_${region}.txt
     tabix -f -s1 -b2 -e2 BCFtools_site_metrics_${region}.txt.gz
