@@ -283,7 +283,17 @@ process prep_hwe {
     """
 }
 
-
+// Joining two pop channels by pop value to have pairs of non-sex/xx keep files for given population.
+ch_unrelated_by_pop_keep_files.flatten()
+                    .map { pop_file -> [pop_file.getName().split('_').first(), pop_file] }
+                    .join(
+                        ch_unrelated_by_pop_keep_files_xx.flatten()
+                            .map { pop_file -> [pop_file.getName().split('_').first(), pop_file] }
+                    )
+    // Now combining 4 tuples of pop_keep files with all input bcf files to get all possible combinations of both.
+    // This will allow to parallelize p_hwe step per bcf per pop_keep file which are all independent.
+                    .combine(ch_bcfs_p_hwe)
+                    .set { ch_bcfs_pop_tuple }
 
 /*
  * STEP 2 - p_hwe
@@ -293,19 +303,20 @@ process p_hwe {
     publishDir "${params.outdir}/p_hwe_plink_files", mode: params.publish_dir_mode
 
     input:
-    tuple val(region), file(bcf), file(index) from ch_bcfs_p_hwe
-    each file(unrealted_pop_keep_file) from ch_unrelated_by_pop_keep_files.flatten()
+    tuple val(population), file(unrealted_pop_keep_file), file(unrealted_pop_keep_file_xx),
+            val(region), file(bcf), file(index) from ch_bcfs_pop_tuple
 
     output:
     tuple val(region), file("*.hwe") into ch_p_hwe
     tuple file("*.log"), file("*.nosex") into ch_p_hwe_logs
 
     script:
-    population = unrealted_pop_keep_file.getName().split('_').first()
+    // If region is from chrX, select the female-only xx keep file.
+    keep_file = region =~ /chrX/ ? unrealted_pop_keep_file_xx : unrealted_pop_keep_file
     """
     plink --bcf ${bcf} \
           --hardy midp \
-          --keep ${unrealted_pop_keep_file} \
+          --keep ${keep_file} \
           --double-id \
           --allow-extra-chr \
           --out ${region}_${population}
