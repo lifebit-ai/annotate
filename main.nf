@@ -144,6 +144,9 @@ if (!params.unrelated_list) exit 1, "The list of unrelated participants was not 
 // Check if user provided SiteQC results directory
 if (!params.siteqc_results_dir) exit 1, "The SiteQC results folder was not specified. \nPlease provide it with --siteqc_results_dir [dir] option. \nUse --help option for more information."
 
+// Check if user provided female sample list (xx.txt)
+if (!params.xx_sample_ids) exit 1, "The female sample lits was not specified. \nPlease provide it with --xx_sample_ids [file] option. \nUse --help option for more information."
+
 
 // Shortening the parameters
 
@@ -249,6 +252,10 @@ ch_N_samples = ch_N_samples_autosomes.mix(ch_N_samples_chrX)
 // This will be used before end_aggregate_annotation step to get correct N_samples file to each
 // bcf tuple based if bcf is comming from autosomal or chrX region.
 
+Channel.fromPath(params.xx_sample_ids, checkIfExists: true)
+                    .set { ch_xx_sample_id }
+
+
 /*
  * STEP 1 - prep_hwe
  */
@@ -259,14 +266,20 @@ process prep_hwe {
     input:
     file(predicted_ancestries) from ch_infer_ancestry
     file(unrelated_list) from ch_unrelated_list
+    file(xx_sample_id) from ch_xx_sample_id
 
     output:
     file("*_unrelated_pop.keep") into ch_unrelated_by_pop_keep_files
+    file("*_unrelated_xx.keep") into ch_unrelated_by_pop_keep_files_xx
 
     script:
     """
     prep_hwe.R --predicted_ancestries='${predicted_ancestries}' \
                --unrelated_list='${unrelated_list}'
+
+    for pop in AFR EUR SAS EAS; do
+        grep -Fwf  ${xx_sample_id} \${pop}_unrelated_pop.keep > \${pop}_unrelated_xx.keep
+    done
     """
 }
 
