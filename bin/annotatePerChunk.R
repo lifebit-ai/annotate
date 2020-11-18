@@ -387,7 +387,7 @@ filts <- dat %>% count(FILTER) %>% mutate(pc = n/sum(n)*100,
 
 outpath <- file.path(allArgs$outdir, 'Summary_stats/')
 
-filts %>% fwrite(paste0(outpath,Sys.Date(),'_all_flags.txt'),
+filts %>% fwrite(paste0(outpath,allArgs$pos,'_all_flags.txt'),
                  sep = '\t', append = T)
 
 
@@ -430,7 +430,7 @@ mmmSd <- dat  %>% select(queryVars) %>%
 stats %<>% left_join(mmmSd, by = c('id'='name')) %>%
   mutate(chunk = allArgs$pos)
 
-outfile <- file.path(outpath, paste0(Sys.Date(),
+outfile <- file.path(outpath, paste0(allArgs$pos,
                                      '_Summary_stats_for_plotting.txt'))
 stats %>% fwrite(outfile, append = T, sep = '\t')
 
