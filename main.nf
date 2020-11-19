@@ -147,6 +147,11 @@ if (!params.siteqc_results_dir) exit 1, "The SiteQC results folder was not speci
 // Check if user provided female sample list (xx.txt)
 if (!params.xx_sample_ids) exit 1, "The female sample lits was not specified. \nPlease provide it with --xx_sample_ids [file] option. \nUse --help option for more information."
 
+// Check if user provided male sample list (xy.txt)
+if (!params.xy_sample_ids) exit 1, "The male sample lits was not specified. \nPlease provide it with --xy_sample_ids [file] option. \nUse --help option for more information."
+
+// Check if user provided participant sample list.
+if (!params.included_samples) exit 1, "The lits of included participants was not specified. \nPlease provide it with --included_samples [file] option. \nThis should be the same sample list file that was used to produce siteqc results. \nUse --help option for more information."
 
 // Shortening the parameters
 
@@ -261,8 +266,13 @@ ch_N_samples = ch_N_samples_autosomes.mix(ch_N_samples_chrX)
 // bcf tuple based if bcf is comming from autosomal or chrX region.
 
 Channel.fromPath(params.xx_sample_ids, checkIfExists: true)
-                    .set { ch_xx_sample_id }
+                    .into { ch_xx_sample_id; ch_xx_sample_id_prep_hwe }
 
+Channel.fromPath(params.xy_sample_ids, checkIfExists: true)
+                    .set { ch_xy_sample_id }
+
+Channel.fromPath(params.included_samples)
+      .set {ch_included_samples}
 
 /*
  * STEP 1 - prep_hwe
@@ -274,7 +284,7 @@ process prep_hwe {
     input:
     file(predicted_ancestries) from ch_infer_ancestry
     file(unrelated_list) from ch_unrelated_list
-    file(xx_sample_id) from ch_xx_sample_id
+    file(xx_sample_id) from ch_xx_sample_id_prep_hwe
 
     output:
     file("*_unrelated_pop.keep") into ch_unrelated_by_pop_keep_files
@@ -463,8 +473,8 @@ process make_header {
     file(bcf) from ch_bcfs_make_header.randomSample(1).map{region, bcf, index -> [bcf]}
 
     output:
-    tuple file("additional_header.txt"), file("additional_header_chrX.txt") into ch_additional_header
-
+    file("additional_header.txt") into ch_additional_header
+    file("additional_header_chrX.txt") into ch_additional_header_chrX
     script:
     """
     # Construct a file with unique set of all stats ever seen in all bcf stats files.
@@ -493,26 +503,51 @@ process annotate_bcfs {
 
     input:
     tuple val(region), file(bcf), file(index), file(bcf_site_metrics), file(index2) from ch_bcfs_final_annotation.join(ch_end_aggr_annotation)
-    tuple file(additional_header), file(additional_header_chrX) from ch_additional_header
+    each file(additional_header) from ch_additional_header
+    each file(additional_header_chrX) from ch_additional_header_chrX
+    each file(xx_sample_id) from ch_xx_sample_id
+    each file(xy_sample_id) from ch_xy_sample_id
+    each file(included_samples) from ch_included_samples
 
     output:
     tuple file('*.vcf.gz'), file('*.vcf.gz.csi') into ch_final_annotated_vcfs
     script:
     outfile=file(bcf).getSimpleName()+'.vcf.gz'
     """
-    bcftools annotate ${bcf} \
-    -x FILTER,^INFO/OLD_MULTIALLELIC,^INFO/OLD_CLUMPED \
-    -a ${bcf_site_metrics} \
-    -h ${additional_header} \
-    -c CHROM,POS,REF,ALT,missingness,medianDepthAll,medianDepthNonMiss,medianGQ,completeGTRatio,MendelSite,ABratio,phwe_afr,phwe_eur,phwe_eas,phwe_sas,FILTER,- | \
-    bcftools +fill-tags \
-    -o ${outfile} \
-    -Oz \
-    --threads 16 \
-    -- -d -t AC,AC_Hom,AC_Het,AC_Hemi,AN
+    if [[ $region == *"chrX"* ]]; then
+        #Create sample file for fill-tags so we can generate male/female specific values
+        awk '\$2 ="f" { print \$1"\\t"\$2}' ${xx_sample_id} > mf_groups_file.txt
+        awk '\$2 ="m" { print \$1"\\t"\$2}' ${xy_sample_id} >> mf_groups_file.txt
+
+        #Now use final sample list to annotate bcf
+        bcftools view \
+        -S ${included_samples} \
+        ${bcf} -Ou \
+        --force-samples |\
+        bcftools annotate  \
+        -x FILTER,^INFO/OLD_MULTIALLELIC,^INFO/OLD_CLUMPED \
+        -a ${bcf_site_metrics} \
+        -h ${additional_header_chrX} \
+        -c CHROM,POS,REF,ALT,missingness,medianDepthAll,medianDepthNonMiss,medianGQ,ABratio,completeGTRatio,phwe_afr,phwe_eur,phwe_eas,phwe_sas,MendelSite,FILTER,missingness_m,medianDepthAll_m,medianDepthNonMiss_m,medianGQ_m,completeGTRatio_m,FILTER_m,- | \
+        bcftools +fill-tags \
+        -Oz \
+        -o ${outfile} \
+        --threads 16 \
+        -- -d -t AC,AC_Hom,AC_Het,AC_Hemi,AN -S mf_groups_file.txt
+    else
+        bcftools annotate ${bcf} \
+        -x FILTER,^INFO/OLD_MULTIALLELIC,^INFO/OLD_CLUMPED \
+        -a ${bcf_site_metrics} \
+        -h ${additional_header} \
+        -c CHROM,POS,REF,ALT,missingness,medianDepthAll,medianDepthNonMiss,medianGQ,completeGTRatio,MendelSite,ABratio,phwe_afr,phwe_eur,phwe_eas,phwe_sas,FILTER,- | \
+        bcftools +fill-tags \
+        -o ${outfile} \
+        -Oz \
+        --threads 16 \
+        -- -d -t AC,AC_Hom,AC_Het,AC_Hemi,AN
+    fi
 
     bcftools index ${outfile}
-
     """
 }
 

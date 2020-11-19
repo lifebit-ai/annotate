@@ -333,3 +333,12 @@ datOut %>%
               sep = '\t')
 
 
+#Produce summary statistics ----------------------------------------------
+#Counts of filter type per chunk
+filts <- datOut %>% count(FILTER) %>% mutate(pc = n/sum(n)*100,
+                                          chunk = allArgs$pos)
+
+outpath <- file.path(allArgs$outdir, 'Summary_stats/')
+
+filts %>% fwrite(paste0(outpath,allArgs$pos,'_all_flags.txt'),
+                 sep = '\t', append = T)
