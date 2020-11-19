@@ -463,7 +463,7 @@ process make_header {
     file(bcf) from ch_bcfs_make_header.randomSample(1).map{region, bcf, index -> [bcf]}
 
     output:
-    file("additional_header.txt") into ch_additional_header
+    tuple file("additional_header.txt"), file("additional_header_chrX.txt") into ch_additional_header
 
     script:
     """
@@ -493,7 +493,7 @@ process annotate_bcfs {
 
     input:
     tuple val(region), file(bcf), file(index), file(bcf_site_metrics), file(index2) from ch_bcfs_final_annotation.join(ch_end_aggr_annotation)
-    file(additional_header) from ch_additional_header
+    tuple file(additional_header), file(additional_header_chrX) from ch_additional_header
 
     output:
     tuple file('*.vcf.gz'), file('*.vcf.gz.csi') into ch_final_annotated_vcfs
