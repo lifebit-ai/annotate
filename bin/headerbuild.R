@@ -12,7 +12,7 @@ library(stringr);
 
 
 #Read in the header options
-toAdd <- fread("all_seen_flags.txt", header = F) %>% as_tibble() %>% 
+toAdd <- fread("all_seen_flags.txt", header = F) %>% as_tibble() %>%
 	filter(V1 != 'PASS');
         starter <- '##FILTER=<ID=';
         mid <- ',Description="';
@@ -52,7 +52,7 @@ singlecases <- paste0(starter, names(singlecases), mid, singlecases, end)
         infostart <- '##INFO=<ID='
         infomid <- ',Number=.,Type=Float,Description="'
         infoend <- '">'
-    
+
 infos <- setNames(
             as.list(c(
 	      'Median depth (taken from the DP FORMAT field) of all samples. Used for filter flag depth.',
@@ -89,5 +89,26 @@ infosout <- paste0(infostart, names(infos), infomid, infos, infoend )
 
 #Now print this out to file, and add it to the rest of the header
 names(singlecases <- NULL)
-d <- c(singlecases, toAdd$V3, infosout) %>% unlist() %>% as.data.frame() 
+d <- c(singlecases, toAdd$V3, infosout) %>% unlist() %>% as.data.frame()
 fwrite(d, 'additional_header.txt', quote = F, col.names = F)
+
+
+# Additional part for creating specific header for chrX
+#Start with header created for autosomes, then add any specific chrom X info fields
+add_header <- fread('additional_header.txt', sep='|', header = F) %>% as_tibble()
+#Let's basically copy everything, make one that is _m, and relevant info to lines
+add_header_m <- add_header
+#Edits for female values
+add_header %<>% mutate(V1 = sub('\\.\\"',' in XX female samples."',V1))
+#Change the mendel one
+add_header %<>% mutate(V1 = ifelse(grepl('Mendel',V1),gsub('trios','trios, not subsetted by XX or XY samples.', V1),V1))
+#Now edit for male
+#First just get rid of the filter column stuff
+add_header_m %<>% filter(!grepl('\\#\\#FILTER',V1)) %>%
+    filter(!grepl('ABratio|MendelSite',V1))
+add_header_m %<>% mutate(V1 = sub(',Number','_m,Number',V1))
+add_header_m %<>% mutate(V1 = sub('\\.\\"',' in XY male samples."',V1))
+add_header_m %<>% filter(!grepl("phwe", V1))
+add_header_m %<>% add_row(V1 = '##INFO=<ID=FILTER_m,Number=.,Type= Character,Description="FILTER field for XY male samples.">')
+d <- rbind(add_header, add_header_m)
+fwrite(d, 'additional_header_chrX.txt', quote = F, col.names = F)
