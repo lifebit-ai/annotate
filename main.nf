@@ -182,7 +182,15 @@ Channel.fromPath(params.input)
     .ifEmpty { exit 1, "Input .csv list of input tissues not found at ${params.input}. Is the file path correct?" }
     .splitCsv(sep: ',',  skip: 1)
     .map { bcf, index -> ['chr'+file(bcf).simpleName.split('_chr').last() , file(bcf), file(index)] }
-    .into { ch_bcfs_p_hwe; ch_bcfs_make_header; ch_bcfs_final_annotation }
+// Initial list of bcf  files is split into two categories.
+// Chromosomes Y and M should bypass all the workflow and be proessed only by one specific process.
+    .branch {
+            autosomes_chrX: it[0] =~ /chr[^YM]/
+            chrYM:			it[0] =~ /chr[YM]/
+    }
+    .set { ch_bcfs }
+// Autosomes and chrX are used in more than one process, so forking the cahnnel:
+ch_bcfs.autosomes_chrX.into { ch_bcfs_p_hwe; ch_bcfs_make_header; ch_bcfs_final_annotation }
 
 
 Channel.fromPath(params.predicted_ancestries)
@@ -508,7 +516,34 @@ process annotate_bcfs {
     """
 }
 
+/*
+ * Step 6 - separate process to process chrY and chrM
+ */
 
+process chrMY_withrawals {
+    publishDir "${params.outdir}/Final_annotated_BCFs/", mode: params.publish_dir_mode
+
+    input:
+    tuple val(region), file(bcf), file(index) from ch_bcfs.chrYM
+
+    output:
+    tuple file('*.vcf.gz'), file('*.vcf.gz.csi') into ch_final_annotated_vcfs_chrYM
+
+    script:
+    outfile=file(bcf).getSimpleName()+'.vcf.gz'
+    """
+    bcftools annotate ${bcf} \
+    -x FILTER,^INFO/OLD_MULTIALLELIC,^INFO/OLD_CLUMPED \
+    --threads 16 | \
+    bcftools +fill-tags \
+    -o ${outfile} \
+    -Oz \
+    --threads 16 \
+    -- -d -t AC,AC_Hom,AC_Het,AC_Hemi,AN
+
+    bcftools index ${outfile}
+    """
+}
 
 
 
